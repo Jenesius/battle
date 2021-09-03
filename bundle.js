@@ -1,3 +1,7 @@
+var config = {
+	fps: 30
+};
+
 class Unit{
 	x;
 	y;
@@ -7,17 +11,91 @@ class Unit{
 
 	height;
 	width ;
+	speed;
 
-	constructor(width, height) {
+
+
+	constructor(width, height, speed) {
 		this.height = height;
 		this.width  = width;
+		this.speed  = speed;
 
 		this.id = Unit._id++;
 	}
 
-	move({x,y}) {
+	set position({x,y}){
 		this.x = x;
 		this.y = y;
+
+		this.moveX = x;
+		this.moveY = y;
+	}
+
+
+	moveStep(){
+
+		if (this.moveX === this.x && this.moveY === this.y) return;
+
+
+
+		let sizeX = Math.abs(this.moveX - this.x);
+		let sizeY = Math.abs(this.moveY - this.y);
+
+		console.log("SizeX and SizeY:", sizeX, sizeY);
+
+		//Гипотенуза
+		let sizeC = Math.sqrt(Math.pow(sizeX, 2) + Math.pow(sizeY, 2));
+		console.log("SizeC:", sizeC);
+
+		/*SIN
+		* Синус угла, который смотрит на сторону sizeY
+		* */
+		const angel = sizeX / sizeC;
+
+		console.log("Angel",angel);
+
+
+		/**
+		 * Дистанция, которую пройдёт юнит за один такт
+		 * В итоге, это новая гипотенуза
+		 * */
+		let distance = this.speed / (config.fps);
+
+		if (distance > sizeC) {
+			this.x = this.moveX;
+			this.y = this.moveY;
+			return;
+		}
+
+		console.log("Distance", distance);
+
+
+		let newSizeX = distance * angel ;
+		let newSizeY = Math.sqrt(Math.pow(distance, 2) - Math.pow(newSizeX, 2)) ;
+
+		if (this.moveX < this.x) newSizeX *= -1;
+
+		if (this.moveY < this.y) newSizeY *= -1;
+
+		this.x += newSizeX;
+		this.y += newSizeY;
+
+		return;
+
+	}
+	move(cord = null) {
+		if (cord === null) {
+			return;
+		}
+
+		this.moveX = cord.x;
+		this.moveY = cord.y;
+
+
+
+		/*
+		this.x = x;
+		this.y = y;*/
 	}
 
 	select(ctx){
@@ -101,27 +179,29 @@ class Cord{
 
 }
 
-const item1 = new Unit(5, 10);
-const item2 = new Unit(3, 3);
-const item3 = new Unit(2, 2);
-const item4 = new Unit(2, 2);
-const item5 = new Unit(2, 2);
+const item1 = new Unit(5, 10, 50);
+const item2 = new Unit(3, 3, 34);
+const item3 = new Unit(2, 2, 30);
+const item4 = new Unit(2, 2, 20);
+const itemFast = new Unit(6, 6, 250);
 
 
 add(item1);
 add(item2);
 add(item3);
 add(item4);
-add(item5);
+add(itemFast);
 
 
-item1.move({x: 40, y: 20});
-item2.move({x: 30, y: 10});
-item3.move({x: 130, y: 100});
-item4.move({x: 130, y: 120});
-item5.move({x: 130, y: 140});
+item1.position = ({x: 40, y: 20});
+item2.position = ({x: 100, y: 100});
+item3.position = ({x: 130, y: 100});
+item4.position = ({x: 130, y: 120});
+itemFast.position = ({x: 130, y: 140});
 
-const fps = 30;
+window.test = () => {
+	itemFast.move({x: 150, y: 200});
+};
 
 
 setInterval(() => {
@@ -129,6 +209,7 @@ setInterval(() => {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	arrayElements.forEach(element => {
+		element.moveStep();
 		element.render(ctx);
 	});
 
@@ -143,23 +224,30 @@ setInterval(() => {
 	}
 
 
-}, 1000 / fps);
+}, 1000 / config.fps);
 
 
 
 let startCord   = null;
 let   endCord 	= null;
 
+
+
 canvas.addEventListener("mousedown", e => {
+
+	if (e.button === 2) {
+
+		e.preventDefault();
+
+		return testMoveSelected(e);
+
+	}
+
 	startCord = new Cord(e.x, e.y);
 	endCord = new Cord(e.x, e.y);
 
-
-
 	function onMove(e){
 		endCord = new Cord(e.x, e.y);
-
-
 	}
 
 
@@ -184,3 +272,20 @@ canvas.addEventListener("mousedown", e => {
 
 
 });
+
+
+canvas.addEventListener('contextmenu', e => {
+	e.preventDefault();
+});
+
+function testMoveSelected(e) {
+	if (arraySelectedElements.length === 0) return;
+
+	let item = arraySelectedElements[0];
+
+
+	let cord = new Cord(e.x, e.y);
+
+
+	item.move(cord);
+}
