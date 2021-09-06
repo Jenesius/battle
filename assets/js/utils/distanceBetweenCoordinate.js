@@ -1,0 +1,1 @@
+export default (cordStart, cordEnd) => Math.sqrt(Math.pow(cordStart.x - cordEnd.x, 2) + Math.pow(cordStart.y - cordEnd.y, 2))

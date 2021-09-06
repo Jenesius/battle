@@ -1,6 +1,18 @@
 import config from "../config";
+import gameStorage from "../gameStorage";
+import Size from "../class/size-class";
+import Coordinate from "../class/cord-class";
+import searchPath from "../map/search-path";
+import Map from "../map/index";
+import distanceBetweenCoordinate from "../utils/distanceBetweenCoordinate";
+
+import pointBetweenCoordinate from "../utils/pointBetweenCoordinate";
 
 export default class Unit{
+
+	size;
+	coordinate;
+
 	x;
 	y;
 	id;
@@ -12,139 +24,123 @@ export default class Unit{
 	speed;
 
 
+	moveConfig;
 
-	constructor(width, height, speed) {
+	constructor(width, height, speed, x, y) {
+
+		this.size = new Size(width, height);
+
 		this.height = height;
 		this.width  = width;
 		this.speed  = speed;
 
 		this.id = Unit._id++;
+
+		this.position = {x,y};
+
+		this.moveConfig = {
+			x: x,
+			y: y,
+			path: []
+		}
 	}
 
 	set position({x,y}){
+		if (this.coordinate)
+		gameStorage.map.free(this.coordinate);
+
+		this.coordinate = new Coordinate(x,y);
+
+		
 		this.x = x;
 		this.y = y;
 
-		this.moveX = x;
-		this.moveY = y;
+		gameStorage.map.take(this.coordinate);
+
 	}
 
 
 	moveStep(){
 
-		if (this.moveX === this.x && this.moveY === this.y) return;
+		
+		if (this.moveConfig === null) return;
+		
+		//Юнит уже находится в нужных координатах
+		if (this.moveConfig.x === this.x && this.moveConfig.y === this.y) return this.moveConfig = null;
+
+		
+		//1. Найти сколько мы проходим за один такт tactDistance
+
+		const tactDistance = this.speed / config.fps;
+		let currentPosition = new Coordinate(this.coordinate); //Cope object
+		let remainDistance = tactDistance;
 
 
-
-		let sizeX = Math.abs(this.moveX - this.x);
-		let sizeY = Math.abs(this.moveY - this.y);
-
-		console.log("SizeX and SizeY:", sizeX, sizeY);
-
-		//Гипотенуза
-		let sizeC = Math.sqrt(Math.pow(sizeX, 2) + Math.pow(sizeY, 2));
-		console.log("SizeC:", sizeC);
-
-		/*SIN
-		* Синус угла, который смотрит на сторону sizeY
-		* */
-		const angel = sizeX / sizeC;
-
-		console.log("Angel",angel);
-
+		//2. Найти растояние до следующией картовой ячейки nextCellDistance
 
 		/**
-		 * Дистанция, которую пройдёт юнит за один такт
-		 * В итоге, это новая гипотенуза
+		 * !!!!!!
+		 * Растояние нужно учитывать где находится точка
+		 * Нам не всегда выгодно идти в левый верхний угол!
 		 * */
-		let distance = this.speed / (config.fps);
 
-		if (distance > sizeC) {
-			this.x = this.moveX;
-			this.y = this.moveY;
-			return;
+
+		while(remainDistance > 0) {
+			
+			/**
+			 * Получение следующих координат:
+			 * Если мы не дошли до точки, то идём до неё
+			 * Если новых точек нет - идём до конечной координаты(значит, то, что мы уже в конечной точке)
+			 * */
+
+			let nextPosition = null;
+
+			//Если есть ячейки, куда двигаться
+			if (this.moveConfig.path.length) nextPosition = Map.translateCell(this.moveConfig.path[this.moveConfig.path.length - 1]);
+			//Иначе двигаемся в центр
+			/**
+			 * ОПТИМИЗИРОВАТЬ #1
+			 * */
+			//Координаты точки, куда следуем
+			else nextPosition = new Coordinate(this.moveConfig);
+			
+			//Растояние до точки, куда следуем
+			const moveDistance = distanceBetweenCoordinate(currentPosition, nextPosition);
+
+			
+			//Мы пришли до точки.
+			if (moveDistance === 0) {
+				if (this.moveConfig.path.length === 0) break; //Мы дошли до конечной точки
+				else {
+					this.moveConfig.path.pop();
+					continue;
+				}
+			}
+
+			//3. Если remainDistance > nextCellDistance -> передвигаем в ту сторону
+			const exp = 0.000005;
+			// Если путь, который мы всиле пройти больше, чем до следующей точки
+			// Или эти путь +- равны
+			if (remainDistance > moveDistance || (remainDistance - moveDistance) > exp) {
+				currentPosition = nextPosition;
+				this.moveConfig.path.pop();
+				remainDistance -= moveDistance;
+			}
+			else {
+				currentPosition = pointBetweenCoordinate(currentPosition, nextPosition, remainDistance);
+				remainDistance = 0;
+			}
 		}
-
-		console.log("Distance", distance);
-
-
-		let newSizeX = distance * angel ;
-		let newSizeY = Math.sqrt(Math.pow(distance, 2) - Math.pow(newSizeX, 2)) ;
-
-		if (this.moveX < this.x) newSizeX *= -1;
-
-		if (this.moveY < this.y) newSizeY *= -1;
-
-		this.x += newSizeX;
-		this.y += newSizeY;
-
-		return;
-
-/*
-		//На сколько сместится объект по Y
-		let newSizeY = distance * angel * (this.moveY < this.y)?(-1):1;
-
-		//На сколько сместится объект по X
-		let newSizeX = Math.sqrt(Math.pow(distance,2) - Math.pow(newSizeY, 2)) * (this.moveX < this.x)?(-1):1;
-
-		this.x += newSizeX;
-		this.y += newSizeY;
-
-		return;
-*/
-
-
-
-
-		let changeX = c;
-
-		if (Math.abs(this.moveX - this.x) < changeX) changeX = Math.abs(this.moveX - this.x);
-		if (this.moveX < this.x) changeX *= -1;
-		this.x += changeX;
-
-		let changeY = c;
-
-		if (Math.abs(this.moveY - this.y) < changeY) changeY = Math.abs(this.moveY - this.y);
-		if (this.moveY < this.y) changeY *= -1;
-		this.y += changeY;
-
+		
+		return this.position = currentPosition;
 	}
 	move(cord = null) {
-		if (cord === null) {
-			return;
-		}
+		if (cord === null) return console.warn("Parameter cord is required.");
 
-		this.moveX = cord.x;
-		this.moveY = cord.y;
+		this.moveConfig = new Coordinate(cord);
+		this.moveConfig.path = searchPath(Map.translateCoordinate(this.coordinate), Map.translateCoordinate(cord))
+		this.moveConfig.cell = Map.translateCoordinate(this.moveConfig);
 
-
-
-		/*
-		this.x = x;
-		this.y = y;*/
-	}
-
-	select(ctx){
-		ctx.strokeStyle = 'rgba(255,0,0,0.43)';
-		ctx.lineWidth = 1;
-
-		const margin = 2;
-
-		// draw a red line
-		ctx.beginPath();
-		ctx.moveTo(this.x - margin, this.y - margin);
-		ctx.lineTo(this.x - margin, this.y + this.height + margin);
-		ctx.lineTo(this.x + this.width + margin, this.y + this.height + margin);
-		ctx.lineTo(this.x + this.width + margin, this.y - margin);
-		ctx.lineTo(this.x - margin, this.y - margin);
-
-		ctx.stroke();
-	}
-
-	render(ctx){
-
-		ctx.fillStyle = 'blue';
-		ctx.fillRect(this.x, this.y, this.width, this.height);
 	}
 
 }
