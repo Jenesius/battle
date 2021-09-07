@@ -1,0 +1,23 @@
+body{
+	margin: 0;
+}
+
+
+#function-panel{
+	position: fixed;
+	right: 0;
+	top: 0;
+
+	height: 100%;
+
+	background-color: red;
+	width: 140px;
+}
+
+#function-panel>div{
+
+}
+
+#function-panel>div>img{
+	height: 70px;
+}
