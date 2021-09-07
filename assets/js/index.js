@@ -6,9 +6,14 @@ import Cord from "./cord";
 import config from "./config";
 import gameStorage from "./gameStorage";
 
-import {initialize} from "./interface/index";
+import Interface from "./interface/index";
 
-initialize();
+/**
+ * IMPORTING STYLES
+ * */
+import "./../css/index.css";
+
+
 
 import Map from "./map/index";
 import Render from "./render/index";
@@ -73,15 +78,26 @@ setInterval(() => {
 		ctx.stroke();
 	}
 
-	for(let key in map.state) {
-		const item = map.state[key];
-		if (!item) continue;
-
-		const nY = Math.floor(key / map.countHoriorizontal);
-		const nX = key - nY * map.countHoriorizontal;
-
+	for(let cell in map.state) {
+		const cellObject = map.state[cell];
+		if (!cellObject) continue;
+		
+		const {x,y} = Map.translateCell(cell);
+		
+		
 		ctx.fillStyle = 'rgba(255,204,0,0.15)';
-		ctx.fillRect(nX * config.mapBlock, nY * config.mapBlock,config.mapBlock,config.mapBlock);
+
+		if (typeof cellObject === "object" && "type" in cellObject) {
+			
+			switch (cellObject.type) {
+				case "mountain": ctx.fillStyle = 'rgba(92,91,91,0.15)'; break;
+			}
+			
+		}
+
+		
+
+		ctx.fillRect(x , y , config.mapBlock, config.mapBlock);
 	}
 
 	/*
@@ -139,7 +155,7 @@ setInterval(() => {
 
 	 */
 
-	if (startCord){
+	if (startCord && !Interface.construction){
 		ctx.fillStyle = '#ff000';
 		ctx.fillRect(Math.min(startCord.x, endCord.x),Math.min(startCord.y, endCord.y),Math.abs(startCord.x - endCord.x), Math.abs(startCord.y - endCord.y) );
 	}

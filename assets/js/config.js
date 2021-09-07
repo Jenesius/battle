@@ -1,6 +1,7 @@
 export default {
 	fps: 30,
 
+	
 	mapBlock: 15,
 	marginSelectSize: 2,
 

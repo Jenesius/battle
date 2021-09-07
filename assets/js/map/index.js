@@ -49,8 +49,8 @@ export default class Map{
 	/**
 	 * Занимает ячейку
 	 * */
-	take(cord){
-		this.map[Map.translateCoordinate(cord)] = true;
+	take(cord, v = true){
+		this.map[Map.translateCoordinate(cord)] = v;
 	}
 
 	takeByCord(cell) {

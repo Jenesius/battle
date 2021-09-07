@@ -56,7 +56,6 @@ export default function searchPath(start, end){
 	}
 
 	function getNeighbour(v){
-		const ver = gameStorage.map.countVertical;
 
 		const maxValue = gameStorage.map.countVertical * gameStorage.map.countHoriorizontal;
 
@@ -73,7 +72,9 @@ export default function searchPath(start, end){
 			{x: current.x, y: current.y + 1}, // BOTTOM
 		];
 
-		return array.filter(elem => elem.x >= 0 && elem.x <= maxValue && elem.y >= 0 && elem.y <= maxValue).map(item => decode(item)).filter(item => gameStorage.map.state[item] !== true);
+		return array.filter(elem => elem.x >= 0 && elem.x <= maxValue && elem.y >= 0 && elem.y <= maxValue)
+				.map(item => decode(item))
+				.filter(item => gameStorage.map.state[item] === false);
 	}
 
 	const closed = []; //Массив прошедших вершин
@@ -97,8 +98,6 @@ export default function searchPath(start, end){
 
 
 		if (curr === end) {
-			console.log("finish")
-			console.log("Start", start, ". End", end);
 
 			return restorePath();
 		}

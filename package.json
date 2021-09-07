@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/Jenesius/battle#readme",
   "devDependencies": {
-    "rollup": "^2.56.3"
+    "rollup": "^2.56.3",
+    "rollup-plugin-postcss": "^4.0.1"
   }
 }

@@ -1,6 +1,7 @@
 var config = {
 	fps: 30,
 
+	
 	mapBlock: 15,
 	marginSelectSize: 2,
 
@@ -105,7 +106,6 @@ function searchPath(start, end){
 	}
 
 	function getNeighbour(v){
-		storage.map.countVertical;
 
 		const maxValue = storage.map.countVertical * storage.map.countHoriorizontal;
 
@@ -122,7 +122,9 @@ function searchPath(start, end){
 			{x: current.x, y: current.y + 1}, // BOTTOM
 		];
 
-		return array.filter(elem => elem.x >= 0 && elem.x <= maxValue && elem.y >= 0 && elem.y <= maxValue).map(item => decode(item)).filter(item => storage.map.state[item] !== true);
+		return array.filter(elem => elem.x >= 0 && elem.x <= maxValue && elem.y >= 0 && elem.y <= maxValue)
+				.map(item => decode(item))
+				.filter(item => storage.map.state[item] === false);
 	}
 
 	const closed = []; //Массив прошедших вершин
@@ -146,8 +148,6 @@ function searchPath(start, end){
 
 
 		if (curr === end) {
-			console.log("finish");
-			console.log("Start", start, ". End", end);
 
 			return restorePath();
 		}
@@ -237,8 +237,8 @@ class Map{
 	/**
 	 * Занимает ячейку
 	 * */
-	take(cord){
-		this.map[Map.translateCoordinate(cord)] = true;
+	take(cord, v = true){
+		this.map[Map.translateCoordinate(cord)] = v;
 	}
 
 	takeByCord(cell) {
@@ -515,36 +515,32 @@ const functionArray = [
     {
         title: "mountain",
         src: "https://st3.depositphotos.com/9461386/36064/v/600/depositphotos_360646636-stock-illustration-pixel-fuji-mountain-at-sunset.jpg",
-        
-
-        activate: () => {
-            
-            
-            
-            canvas.addEventListener("mousedown", e => {
+        construction: true,
+        function: (e) => {
     
-                function addMountain(e){
-                    storage.map.take(e, {
-                        type: "mountain"
-                    });
-                }
-                
-                canvas.addEventListener("mousemove", addMountain);
-                
-
-                
-                canvas.addEventListener("mouseup", () => {
-    
-                    canvas.removeEventListener("mousemove", addMountain);
-                    
-                });
-                
+            storage.map.take(e, {
+                type: "mountain"
             });
-            
         }
     }
 ];
 
+
+class Interface{
+    
+    
+    construction;
+    
+    constructor() {
+    
+        this.construction = false;
+        
+        initialize();
+        
+    }
+
+}
+const interfaceObject = new Interface();
 
 function initialize(){
     
@@ -558,7 +554,33 @@ function initialize(){
         image.alt = elem.title;
         div.appendChild(image);
         
-        div.addEventListener("click", elem.activate);
+        div.addEventListener("click", () => {
+            
+            if (elem.construction) {
+                interfaceObject.construction = elem.construction;
+            }
+            
+            function listenerDown(){
+                canvas.addEventListener("mousemove", elem.function);
+    
+                canvas.addEventListener("mouseup", listenerUp);
+            }
+            
+            function listenerUp(){
+                canvas.removeEventListener("mousedown", listenerDown);
+                canvas.removeEventListener("mousemove", elem.function);
+                
+                /*****/
+                canvas.removeEventListener("mouseup", listenerUp);
+                interfaceObject.construction = false;
+            }
+            
+            canvas.addEventListener("mousedown", listenerDown);
+            
+
+            
+            
+        });
         
         container.append(div);
     });
@@ -643,8 +665,6 @@ function Render(unit) {
 
 }
 
-initialize();
-
 const map = new Map();
 
 storage.map = map;
@@ -705,15 +725,26 @@ setInterval(() => {
 		ctx.stroke();
 	}
 
-	for(let key in map.state) {
-		const item = map.state[key];
-		if (!item) continue;
-
-		const nY = Math.floor(key / map.countHoriorizontal);
-		const nX = key - nY * map.countHoriorizontal;
-
+	for(let cell in map.state) {
+		const cellObject = map.state[cell];
+		if (!cellObject) continue;
+		
+		const {x,y} = Map.translateCell(cell);
+		
+		
 		ctx.fillStyle = 'rgba(255,204,0,0.15)';
-		ctx.fillRect(nX * config.mapBlock, nY * config.mapBlock,config.mapBlock,config.mapBlock);
+
+		if (typeof cellObject === "object" && "type" in cellObject) {
+			
+			switch (cellObject.type) {
+				case "mountain": ctx.fillStyle = 'rgba(92,91,91,0.15)'; break;
+			}
+			
+		}
+
+		
+
+		ctx.fillRect(x , y , config.mapBlock, config.mapBlock);
 	}
 
 	/*
@@ -771,7 +802,7 @@ setInterval(() => {
 
 	 */
 
-	if (startCord){
+	if (startCord && !interfaceObject.construction){
 		ctx.fillStyle = '#ff000';
 		ctx.fillRect(Math.min(startCord.x, endCord.x),Math.min(startCord.y, endCord.y),Math.abs(startCord.x - endCord.x), Math.abs(startCord.y - endCord.y) );
 	}

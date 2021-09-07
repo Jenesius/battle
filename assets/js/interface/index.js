@@ -5,38 +5,35 @@ const functionArray = [
     {
         title: "mountain",
         src: "https://st3.depositphotos.com/9461386/36064/v/600/depositphotos_360646636-stock-illustration-pixel-fuji-mountain-at-sunset.jpg",
-        
-
-        activate: () => {
-            
-            
-            
-            canvas.addEventListener("mousedown", e => {
+        construction: true,
+        function: (e) => {
     
-                function addMountain(e){
-                    gameStorage.map.take(e, {
-                        type: "mountain"
-                    })
-                }
-                
-                canvas.addEventListener("mousemove", addMountain);
-                
-
-                
-                canvas.addEventListener("mouseup", () => {
-    
-                    canvas.removeEventListener("mousemove", addMountain);
-                    
-                })
-                
+            gameStorage.map.take(e, {
+                type: "mountain"
             })
-            
         }
     }
 ]
 
 
-export function initialize(){
+class Interface{
+    
+    
+    construction;
+    
+    constructor() {
+    
+        this.construction = false;
+        
+        initialize();
+        
+    }
+
+}
+const interfaceObject = new Interface();
+export default interfaceObject;
+
+function initialize(){
     
     const container = document.getElementById("function-panel");
     
@@ -48,9 +45,36 @@ export function initialize(){
         image.alt = elem.title;
         div.appendChild(image);
         
-        div.addEventListener("click", elem.activate);
+        div.addEventListener("click", () => {
+            
+            if (elem.construction) {
+                interfaceObject.construction = elem.construction;
+            }
+            
+            function listenerDown(){
+                canvas.addEventListener("mousemove", elem.function);
+    
+                canvas.addEventListener("mouseup", listenerUp);
+            }
+            
+            function listenerUp(){
+                canvas.removeEventListener("mousedown", listenerDown);
+                canvas.removeEventListener("mousemove", elem.function);
+                
+                /*****/
+                canvas.removeEventListener("mouseup", listenerUp);
+                interfaceObject.construction = false;
+            }
+            
+            canvas.addEventListener("mousedown", listenerDown);
+            
+
+            
+            
+        });
         
         container.append(div);
     })
     
 }
+
